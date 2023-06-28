@@ -1,4 +1,4 @@
-from .dependencies import *
+from .dependencies import pl, logging, datetime
 
 
 class Module:
