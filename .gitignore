@@ -152,7 +152,6 @@ cython_debug/
 #.idea/
 
 # My own files
-src/jupyter_dev.ipynb
 jupyter_dev
 dev_output
 
