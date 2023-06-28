@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "ul-brightspace-helper"
+version = "0.1.0"
+description = "A module to help University of Limerick Teaching staff manage the background administration associated with module/course leadership"
+authors = ["Kevin O'Malley (Sp1d3r-z3r0)"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "ul_brightspace_helper"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+xlwings = "^0.30.10"
+matplotlib = "^3.7.1"
+logging = "^0.4.9.6"
+pandas = "^2.0.2"
+
+
+[tool.poetry.group.dev.dependencies]
+jupyter = "^1.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
