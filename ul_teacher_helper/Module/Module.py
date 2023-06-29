@@ -1,4 +1,4 @@
-from .dependencies import pl, sh, logging, tk, filedialog, datetime, List, Dict, Tuple, Union
+from ..dependencies import pl, sh, logging, tk, filedialog, datetime, List, Dict, Tuple, Union
 
 class Module:
     """
