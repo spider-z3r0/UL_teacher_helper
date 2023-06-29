@@ -1,4 +1,4 @@
-from .dependencies import pl, logging, datetime, List, Dict
+from .dependencies import pl, sh, logging, tk, filedialog, datetime, List, Dict, Tuple, Union
 
 class Module:
     """
@@ -121,7 +121,8 @@ class Module:
         # Check if the method has already been executed
         if self._check_method_execution('teaching_structure'):
             raise RuntimeError("The 'teaching_structure' method has already been executed. "
-                            "Running it again risks overwriting work.")
+                            "Running it again risks overwriting work."
+                            "You can manually create new folders in the Teaching Material directory.")
 
         # Assert the number of weeks
         assert weeks > 0, "The number of weeks must be greater than 0"
@@ -145,6 +146,101 @@ class Module:
     # my sense is it is necessary, especially if using template documents like the module handbook, the departmental grading document, etc.
     # but it might be better to create a method that copies one document at a time and logs it, rather than a method that copies all documents at once
 
+
+    def copy_documents(self, documents: Union[pl.Path, List[pl.Path]], sub_dir_name: str = 'Module Documents') -> None:
+        """
+        Copies documents to the Module Documents subdirectory.
+
+        Args:
+            documents (Union[pl.Path, List[pl.Path]]): Either a single path or a list of paths to the documents to be copied.
+            sub_dir (str, optional): The subdirectory to copy the documents to. Defaults to 'Module Documents'.
+
+        Raises:
+            ValueError: If the provided documents argument is neither a path nor a list of paths.
+        """
+        # Get the path to the Module Documents subdirectory
+        documents_dir = self.root / sub_dir_name
+
+        # Convert single path to a list
+        if isinstance(documents, pl.Path):
+            documents = [documents]
+
+        # Check if the method has already been executed
+        method_executed = self._check_method_execution('copy_documents')
+
+        # Check for existing files with the same name
+        existing_files = [
+            doc.name for doc in documents if (documents_dir / doc.name).exists()
+        ]
+
+        # Ask for user confirmation if there are existing files and the method has been executed before
+        if existing_files and method_executed:
+            print(
+                "The following files already exist in the Module Documents folder:\n"
+                f"{', '.join(existing_files)}"
+            )
+            confirmation = input(
+                "Running 'copy_documents' again risks overwriting existing files. "
+                "Are you sure you want to continue? (Y/N): "
+            ).strip().lower() or 'n'
+            if confirmation.strip().lower() != 'y':
+                print("Method execution canceled.")
+                return
+
+        # Copy the documents to the Module Documents subdirectory
+        for document in documents:
+            document_name = document.name
+            document_path = documents_dir / document_name
+            sh.copy(document, document_path)
+
+        # Log the method execution
+        logging.info(f"'copy_documents' method deployed on {datetime.now()}"
+                     f"\nCopied documents: {', '.join([doc.name for doc in documents])}")
+
+    def gather_documents(self, explorer: bool = False) -> List[pl.Path]:
+        """
+        Interactive method to gather a list of document paths chosen by the user.
+
+        Args:
+            explorer (bool, optional): Whether to open a file explorer window for selecting documents.
+                Defaults to False.
+
+        Returns:
+            List[Path]: A list of selected document paths.
+
+        Example:
+            >>> module = Module(...)
+            >>> documents = module.gather_documents(explorer=True)
+            >>> module.copy_documents(documents)
+        """
+        document_paths = []
+
+        if explorer:
+            root = tk.Tk()
+            root.withdraw()
+
+        print("Please select documents to add:")
+        print("Enter 'q' to finish and proceed with copying.")
+
+        if explorer:
+            file_paths = filedialog.askopenfilenames()
+            document_paths = [pl.Path(file_path) for file_path in file_paths]
+        else:
+            while True:
+                file_path = input("Enter the path of a document: ").strip()
+                if file_path.lower() == 'q':
+                    break
+
+                path = pl.Path(file_path)
+                if not path.is_file():
+                    print("Invalid file path. Please try again.")
+                    continue
+
+                document_paths.append(path)
+
+        return document_paths
+        
+
     def _check_method_execution(self, method_name: str) -> bool:
         """
         Checks if a method has already been executed by searching the log file.
@@ -155,7 +251,7 @@ class Module:
         Returns:
             bool: True if the method has been executed, False otherwise.
         """
-        log_path = self.root / '.module_log.txt'
+        log_path = self.root / 'module_log.txt'
         if log_path.exists():
             with open(log_path, 'r') as log_file:
                 log_contents = log_file.read()
