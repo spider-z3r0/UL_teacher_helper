@@ -1,4 +1,11 @@
+"""
+This module contains the code for the Module class, which is used to create an object that represents a module in the UL Teacher Helper application, which can be used to help the administration of the module, both
+"""
+
 from ..dependencies import pl, sh, logging, tk, filedialog, datetime, List, Dict, Tuple, Union
+
+
+
 
 class Module:
     """
@@ -12,9 +19,8 @@ class Module:
         year: str,
         semester: str,
         leader: str,
-        root: pl.Path = pl.Path.cwd(),
-        exams: int = 0,
-        coursework: int = 0,
+        parent_directory: pl.Path,
+        root: pl.Path = None,
     ) -> None:
         """
         Initializes a new Module instance.
@@ -25,15 +31,20 @@ class Module:
             year (str): The year of study for the module.
             semester (str): The semester of study for the module (SPR or AUT).
             leader (str): The module leader.
-            root (pl.Path, optional): The root directory path. Defaults to current working directory.
-            exams (int, optional): The number of exams. Defaults to 0.
-            coursework (int, optional): The number of coursework. Defaults to 0.
+            parent_directory (pl.Path, optional): The root directory path.
+            root (pl.Path, optional): The root directory path of the module. Defaults to None but the path will be set when the 'structure' method is executed.
+
+
+        
+        Example:
+            >>> module = Module("Example Module", "CODE123", "2022-23", "AUT", "John Doe", pl.Path.cwd())
         """
         self.name = name
         self.code = code
         self.year = year
         self.semester = semester
         self.leader = leader
+        self.parent_directory = parent_directory
         self.root = root
 
     def __repr__(self) -> str:
@@ -43,7 +54,7 @@ class Module:
         Returns:
             str: A string representation of the module.
         """
-        return f"Module({self.name}, {self.code}, {self.year}, {self.semester}, {self.leader})"
+        return f"Module({self.name}, {self.code}, {self.year}, {self.semester}, {self.leader}, {self.parent_directory}, {self.root})"
     
     def structure(self, new_module: bool = False, sub_dirs=['Teaching Material', 'Assessments', 'Module Documents']) -> None:
         """
@@ -54,27 +65,31 @@ class Module:
 
         Args:
             new_module (bool, optional): Whether it is a new module or an existing one. Defaults to False.
-            sub_dirs (list, optional): List of subdirectories to create. Defaults to ['Teaching Material', 'Assignments', 'Module Documents'].
+            sub_dirs (list, optional): List of subdirectories to create. Defaults to ['Teaching Material', 'Assessments', 'Module Documents'].
         """
+        
+        
+        # Set the root directory path if it is not set
+        if self.root is None:
+            self.root = self.parent_directory / f'{self.code} {self.semester} {self.year}'
+        
         # Check if the method has already been executed
         if self._check_method_execution('structure'):
             raise RuntimeError("The 'structure' method has already been executed. "
-                               "Running it again risks overwriting work.")
+                            "Running it again risks overwriting work.")
 
-        # Create the module directory path
-        self.root = self.root / f'{self.code} {self.semester} {self.year}'
         # Make the module root directory
         try:
             self.root.mkdir(parents=True, exist_ok=False)
         except FileExistsError:
             print(f"Module {self.name} {self.code} has already been created at {self.root}. "
-                  f"\nPlease use the existing module or delete it and create a new one.")
+                f"\nPlease use the existing module or delete it and create a new one.")
             return
 
         # Make the subdirectories by iterating over the list of subdirectories
         for sub_dir in sub_dirs:
             (self.root / sub_dir).mkdir(parents=True, exist_ok=False)
-        
+
         # Generate log file
         log_path = self.root / 'module_log.txt'
         logging.basicConfig(filename=log_path, level=logging.INFO)
@@ -86,9 +101,9 @@ class Module:
 
         # Log the method execution
         logging.info(
-            f"'structure' method deployed on {datetime.now()}."
-            
+            f"'structure' method deployed on {datetime.now()}."    
         )
+
     
     def teaching_structure(self, weeks: int = 13, topics: List[str] = []) -> None:
         """
